@@ -1,0 +1,38 @@
+---
+title: Rmarkdown -> Blogdown -> Hugo -> Github -> Getlify
+author: Magnus Nygård Osnes
+date: '2022-09-11'
+slug: []
+categories:
+  - Web stuff
+tags: []
+image: ~
+description: ~
+toc: ~
+---
+
+## Everything seems to be up running correctly!
+
+I spent the last day or so figuring out how to get a personal website running from R studio
+
+## Proof that I actually got it running
+
+```{r remedy001, fig.height=10, fig.width=10,fig.align="center"}
+library(ape)
+set.seed(10)
+par(mfrow=c(2,2))
+plot(rlineage(0.1, 0)) # Yule process with lambda = 0.1
+title("Yule process with lambda = 0.1")
+plot(rlineage(0.1, 0.05)) # simple birth-death process
+title("Birth death process")
+b <- function(t) 1/(1 + exp(0.2*t - 1)) # logistic
+curve(b, 0, 50, xlab = "Time", ylab = "")
+mu <- 0.07
+segments(0, mu, 50, mu, lty = 2)
+legend("topright", c(expression(lambda), expression(mu)),
+       lty = 1:2, bty = "n")
+plot(rlineage(b, mu), show.tip.label = FALSE)
+title("Simulated with 'rlineage'")
+
+```
+
