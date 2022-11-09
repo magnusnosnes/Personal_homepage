@@ -1,5 +1,5 @@
 ---
-title: Rmarkdown -> Blogdown -> Hugo -> Github -> Getlify
+title: Rmarkdown -> Blogdown -> Hugo -> Github -> Netlify
 author: Magnus Nygård Osnes
 date: '2022-09-11'
 slug: []
