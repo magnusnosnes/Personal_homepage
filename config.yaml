@@ -1,6 +1,6 @@
 baseURL: "https://magnusnosnes.netlify.app/"
 languageCode: "en-us"
-title: "Hugo Profile"
+title: "Homepage Magnus Nygård Osnes"
 theme: "hugo-profile"
 Paginate: 3
 disqusShortname: gurusabarish
