@@ -39,7 +39,7 @@ Menus:
     #   weight: 2
 
 params:
-  title: "Dr. Magnus Nygård Osnes"
+  title: "Magnus Nygård Osnes"
   description: This is my cool site
   # staticPath: ""  # The path to serve the static files from
   favicon: "/rodent.png"
@@ -96,9 +96,9 @@ params:
   # Hero
   hero:
     enable: true
-    intro: "Hi, my name is"
+    intro: ""
     title: "Magnus Nygård Osnes"
-    subtitle: "I am a biostatistican or maybe a bioinformatician"
+    subtitle: "I am a computational biologist / biostatistician / bioinformatician"
     content: "I have worked with multiple bacterias and viruses and apply and develop new methods to analyse them"
     image: /images/me.png
     button:
