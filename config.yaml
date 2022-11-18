@@ -54,7 +54,7 @@ params:
 
   theme:
     disableThemeToggle: false
-    defaultTheme: "dark" # light
+    defaultTheme:  "light" #"dark"
 
   # font:
   #   fontSize: 1.5rem # default: 1rem
@@ -64,12 +64,19 @@ params:
 
   # color preference
   color:
-    textColor: #393c61
-    secondaryTextColor: #9f9f9f
-    backgroundColor: #fbfbfb
-    secondaryBackgroundColor: #cbd9df
-    primaryColor: #65adc3
-    secondaryColor: #057e9a
+    ##FHI  
+    textColor: "#393c61"
+    secondaryTextColor: "#9f9f9f"
+    backgroundColor: "#fbfbfb"
+    secondaryBackgroundColor: "#cbd9df"
+    primaryColor: "#65adc3"
+    secondaryColor: "#057e9a"
+    ##NAVY 
+    # textColor: "#F5F5F5"
+    # secondaryTextColor: "#F5F5F5"
+    # backgroundColor: "#313552"
+    # primaryColor: "#F1E0AC"
+    # secondaryColor: "#30475E"
 
   #   darkmode:
   #     textColor:
