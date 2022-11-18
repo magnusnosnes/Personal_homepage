@@ -34,15 +34,17 @@ The reason we wanted to investigate this question is that the the observed gende
 
 <img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-1-1.png" width="672" />
 
-\
+Looking at the data we thought that there may be some threshold in the observed fraction of men that are indicative of sexual network structure and hence could imply a different growth rate. By visually inspection of the data we may define a threshold like this:
 
-Looking at the data we thought that there may be some threshold in the observed fraction of men that are indicative of the sexual network structure. Instead of trying to define some threshold such as 70% > indicates MSM, we wanted to define a changepoint model where this threshold is estimated along with the differences in growth rate. 
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" width="672" />
+
+Instead of  to define some threshold such as 70% > indicates MSM, we wanted to define a changepoint model where this threshold is estimated along with the differences in growth rate. 
 
 <!--  ### Size of the transmission lineages
 
 
  
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="768" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="768" />
 --> 
 
 
@@ -172,7 +174,7 @@ MCMCsummary(object = samples_small_scale$samples)
 MCMCplot(object = samples_small_scale$samples,params=c("mu1", "mu2"))
 ```
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-12-1.png" width="672" />
 
 ```r
 #MCMCtrace(object = samples_small_scale$samples,params=c("alpha")) #Look at the traceplots
@@ -195,7 +197,7 @@ MCMCsummary(object = samples_large_scale$samples)
 MCMCplot(object = samples_large_scale$samples,params=c("mu1", "mu2"))
 ```
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-13-1.png" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-14-1.png" width="672" />
 
 ```r
 #MCMCtrace(object = samples_large_scale$samples,params=c("alpha")) #Look at the traceplots
@@ -206,7 +208,7 @@ MCMCplot(object = samples_large_scale$samples,params=c("mu1", "mu2"))
 
 We use the same dataset but change to a regression model. 
 
-## Defining the model
+### Defining the model
 
 
 ```r
@@ -267,7 +269,7 @@ MCMCsummary(object = regression_samples_small_scale$samples)
 MCMCplot(object = regression_samples_small_scale$samples,params=c("mu1","beta"))
 ```
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-15-1.png" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-16-1.png" width="672" />
 
 ```r
 #MCMCtrace(object = regression_samples_small_scale$samples,params=c("beta"))
@@ -308,7 +310,7 @@ MCMCsummary(object = regression_samples_large_scale$samples)
 MCMCplot(object = regression_samples_large_scale$samples,params=c("mu1","beta"))
 ```
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-16-1.png" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-17-1.png" width="672" />
 
 ```r
 #MCMCtrace(object = regression_samples_large_scale$samples,params=c("beta"))
