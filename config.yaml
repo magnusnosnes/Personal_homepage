@@ -105,8 +105,10 @@ params:
     enable: true
     intro: ""
     title: "Magnus Nygård Osnes"
-    subtitle: "I am a computational biologist / biostatistician / bioinformatician"
-    content: "I have worked with multiple bacterias and viruses and apply and develop new methods to analyse them"
+    subtitle: "I am a computational biologist"
+    content: "I work mostly in the fields of biostatistics and bioinformatics. 
+    I have worked with animals, viruses and bacteria
+    and developed new models and methods to illuminate their describe their population dynamics."
     image: /images/me.png
     button:
       enable: true
@@ -132,17 +134,16 @@ params:
       I am a computational biologist with a passion for development of new methods. I have a background in statistics and mathematics,
       and I have a strong interest in the intersection of technology and biology. I am currently working as a postdoc at the Norwegian Institute of Public Health. 
 
-      I am currently working on a project where we try to figure out things that contribute to penicillin resistance in bacteria. 
     skills:
       enable: true
       title: "Here are a few technologies I've been working with recently:"
       items:
         - "R"
         - "Python"
-        - "BUGS"
-        - "Nimble"
+        - "Statistical programming languages such as: \n NIMBLE, JAGS, WinBUGS"
         - "Bayesian statistics"
-        - "Shiny, blogdown and hugo"
+        - "R Shiny, blogdown and hugo"
+        - "Bioinformatics"
 
   # # Experience
   # experience:
@@ -244,8 +245,8 @@ params:
         #   - "Django"
         #   - "Bootstrap"
         links:
-          - icon: fab fa-github
-            url: https://github.com/gurusabarish/converter
+        #  - icon: fab fa-github
+        #    url: https://github.com/gurusabarish/converter
 
       - title: LineageHomology
         content: LineageHomology uses phylogenies with reconstructed ancestral states to define groups of phylogenetic tips that have gained their states through homologous inheritance or de novo acquisition.
@@ -258,8 +259,8 @@ params:
         #   - "Bootstrap"
         #   - "Javascript"
         links:
-          - icon: fab fa-github
-            url: https://github.com/gurusabarish/HugoProfileV2
+        #  - icon: fab fa-github
+        #    url: https://github.com/gurusabarish/HugoProfileV2
             
       - title: Doctoral thesis
         content: Genome epidemiology of Neisseria gonorrhoeae and SARS-CoV-2 Strain dynamics from the level of individuals to global dissemination.
@@ -272,8 +273,8 @@ params:
         #   - "Bootstrap"
         #   - "Javascript"
         links:
-          - icon: fab fa-github
-            url: https://github.com/gurusabarish/HugoProfileV2
+        #  - icon: fab fa-github
+        #    url: https://github.com/gurusabarish/HugoProfileV2
                         
       - title: Master thesis
         content: A hierarchical Bayesian state space model for fluctuating rodent populations, with application to the populations at Finse, Norway
@@ -286,8 +287,8 @@ params:
         #   - "Bootstrap"
         #   - "Javascript"
         links:
-          - icon: fab fa-github
-            url: https://github.com/gurusabarish/HugoProfileV2
+        #  - icon: fab fa-github
+        #    url: https://github.com/gurusabarish/HugoProfileV2
 
 
   #Contact
