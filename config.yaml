@@ -108,7 +108,7 @@ params:
     subtitle: "I am a computational biologist"
     content: "I work mostly in the fields of biostatistics and bioinformatics. 
     I have worked with animals, viruses and bacteria
-    and developed new models and methods to illuminate their describe their population dynamics."
+    and developed new methods to describe their population dynamics."
     image: /images/me.png
     button:
       enable: true
