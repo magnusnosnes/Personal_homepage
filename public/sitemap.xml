@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/blogs/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/categories/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/categories/changepoint-modeling/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/categories/lineagehomology/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/categories/tls/</loc>
+    <lastmod>2022-11-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/blogs/2022-11-09-rmarkdown-blogdown-hugo-github-netlify/</loc>
+    <lastmod>2022-09-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/categories/web-stuff/</loc>
+    <lastmod>2022-09-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://magnusnosnes.netlify.app/tags/</loc>
+  </url>
+</urlset>

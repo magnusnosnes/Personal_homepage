@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>TLs on Homepage Magnus Nygård Osnes</title>
+    <link>https://magnusnosnes.netlify.app/categories/tls/</link>
+    <description>Recent content in TLs on Homepage Magnus Nygård Osnes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 17 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://magnusnosnes.netlify.app/categories/tls/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bayesian change-point modeling using Nimble</title>
+      <link>https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/</link>
+      <pubDate>Thu, 17 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/</guid>
+      <description>Modeling the growth rate of transmission lineages We are working on a project where we try to illuminate some aspect of lineage dynamics of Neisseria gonorrhoeae. We are focusing on four locations divided into small scale: Norway and Australia, and large scale: Europe and the USA. For each of the four geographical locations we have used LineageHomology to define transmission lineages wrt. each of those locations. A “transmission lineage” is group of tips on a phylogeny that are are estimated to stem from the same importation event.</description>
+    </item>
+    
+  </channel>
+</rss>

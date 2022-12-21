@@ -1,0 +1,548 @@
+---
+title: Bayesian change-point modeling using Nimble
+author: Magnus Nygård Osnes
+date: '2022-11-17'
+slug: []
+categories:
+  - TLs
+  - LineageHomology
+  - Changepoint modeling
+tags: []
+image: ~
+description: ~
+toc: ~
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, collapse=T, cache=T, 'styler', tidy.opts=list(strict=T))
+```
+
+```{r loading files needed for script, echo=FALSE, include=FALSE}
+#   ____________________________________________________________________________
+#   Analysis                                                                ####
+
+
+library(ape)
+library(LineageHomology)
+library(skygrowth)
+library(grid)
+library(scales) #Make more axis ticks.
+library(gridExtra)
+library(ggplot2)
+library(phylodyn)
+library(coefplot)
+
+#Notes:
+#Had to install an older version of RcppArmadillo to get the script running
+#"install.packages("https://cran.r-project.org/src/contrib/Archive/RcppArmadillo/RcppArmadillo_0.9.900.3.0.tar.gz", repos=NULL, type="source")"
+
+#Setup paths
+path_main = "~/Dropbox/10000_Lovers/Phylogeography"
+path_data = "~/Dropbox/10000_Lovers/01_LineageHomology/11_saved_data/"
+path_results = "~/Dropbox/10000_Lovers/01_LineageHomology/12_saved_results/"
+path_final_figures = "~/Dropbox/10000_Lovers/01_LineageHomology/99_Figures_for_paper/"
+
+source("~/Dropbox/10000_Lovers/01_LineageHomology/sourcefunctions/environment_variables.R")
+load(file=paste0(path_data,"Result_EUR.Rdata"))
+Result_EUR=LineageHomology::reorder_LH(Result_EUR)
+#RQ: Does meta-data explain the growth-rate of the biggest clades in period 2015-2018?
+#1: Run Skygrowth on each TL.
+#2: Extract clade wise growth-rate.
+#3: Define explanatory variables for each clade: 
+#4: Regress the growth rates on the metadata.
+
+
+#   ____________________________________________________________________________
+#   Set up treeclusters: Focus on the 20 largest from each location         ####
+
+```
+
+```{r script specific functions, echo=FALSE, include=FALSE}
+clusters_and_times = function(result,main_tree,larger_than=10) {
+  
+  tree_clusters = list()
+  time_shift_list = list() #For keeping track of time when shifting clusters. 
+  for (i in 1:(which(result$Lineage_sizes<11)[1]-1))  #Loop over all lineages larger than 
+  {
+    cluster_tips = result$Taxa_names[i][[1]]
+    tips_to_drop = main_tree$tip.label[main_tree$tip.label%in%cluster_tips==FALSE] #Tips to drop in this.
+    mrca_node = getMRCA(main_tree,tip=cluster_tips)
+    subtree = drop.tip(main_tree,tip =tips_to_drop)
+    tree_clusters[[i]]= subtree
+    time_shift_list[[i]] = nodeheight(main_tree, node=mrca_node)
+  }
+  return(list("clusters"=tree_clusters, "time_shifts"=time_shift_list))
+}
+
+neg_sizes = function(cluster_times) {
+  neg_size_clusters = list()
+  
+  for(i in 1:length(cluster_times$time_shifts)) {
+    tree_temp = cluster_times$clusters[[i]]
+    class(tree_temp) = "phylo"
+    #Estimate 1 Ne for every 1 year
+    n_intervals = floor(max(nodeHeights(tree_temp))/1)
+    neg_size_clusters[[i]]=skygrowth.map(tree_temp, res=n_intervals, maxiter=400)
+  }
+  neg_size_clusters
+}
+
+custom_skygrowth_plot <- function( fit,shift_time=NA,ggplot=TRUE, logy=TRUE,xname=NA,xlimits=NA){
+  ne <- fit$ne
+  fit$time<-fit$time+shift_time
+  pldf <- data.frame( t = fit$time,  nemed = ne, nelb = fit$ne_ci[,1], neub = fit$ne_ci[,3] )
+  pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ nemed)) + ggplot2::geom_line()+ ggplot2::ylab('Effective population size') + ggplot2::xlab(xname)
+  pl <- pl + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ nelb, ymax = ~ neub), fill = 'blue', alpha = .2)
+  if(logy==T){
+    pl <- pl + ggplot2::scale_y_log10()  
+  }
+  if(is.na(xlimits)==F){
+    ind_select = which(fit$time>=xlimits)
+    fit$ne_ci[ind_select,]; ylims = range(fit$ne_ci[ind_select,])
+    pl<-pl+lims(x=c(xlimits,NA),y=ylims)
+  }
+  return(pl)
+}
+
+skygrowth_multiplot = function(neg_sizes,root_date,time_shift_list,xlimits, logy) {
+  c1 = lapply(1:length(neg_sizes), FUN = function(x) custom_skygrowth_plot(neg_sizes[[x]],shift_time=(root_date+time_shift_list[[x]]), xname=paste("Cluster: ",x),xlimits=xlimits, logy=logy))
+  n <- length(c1)
+  nCol <- floor(sqrt(n))
+  do.call("grid.arrange", c(c1, ncol=nCol))
+}
+
+
+return_growth_interval=function(clusterwise_output, period=c(2000,2017), shift_time=1750,time_shift_list) {
+  ncluster = length(clusterwise_output)
+  average_growth_rate = c()
+  for(i in 1:ncluster){
+    times = clusterwise_output[[i]]$time+shift_time+time_shift_list$time_shifts[[i]] #Adding Root date + cluster tmrca.
+    inds = which(times>=period[1]&times<=period[2]) #indexes in time periods.
+    growth_rate = mean(clusterwise_output[[i]]$growthrate[inds])
+    average_growth_rate=c(average_growth_rate,growth_rate)
+  } 
+  return(average_growth_rate)
+}
+
+
+find_lineage_age = function(result, larger_than) {
+  rel_inds = which(result$Lineage_sizes>larger_than)
+  lineage_age = c()
+  for(i in rel_inds){
+    result$Taxa_names[[i]]
+    youngest_sequence = max(name_date$dates[unlist(lapply(result$Taxa_names[[i]], FUN=function(x) which(x==name_date$name)))])
+    tl_age = youngest_sequence-result$Halfedge_over_tmrca[i]
+    lineage_age = c(lineage_age,tl_age)
+  }
+  lineage_age
+}
+
+define_explanatory_variables = function(result, larger_than) {
+  #Sex distribution
+  sex = sex_distributions(RLH = result,larger_than=larger_than)
+  sex_variable = c()
+  for(i in seq(1,nrow(sex),3)){ #Removes no data column.
+    fem = sex$Count[i]
+    mal = sex$Count[i+1]
+    tmp=(mal)/sum(fem+mal)
+    if(sum(fem+mal)<floor(larger_than/2)) { #If there are less than half of the minimum size we have nearly no information -> set Sex to NA. 
+      tmp = NA  
+    }
+    sex_variable = c(sex_variable,tmp)
+    
+  }
+  #MTR mosaic category: sets up a categorical variable.
+  mtrDs = mtrD(RLH = result,larger_than=larger_than)
+  mtr_variable = c()
+  lineage_size = c() #defining this here for convenience.
+  for(i in seq(1,nrow(mtrDs),7)){
+    mtrDcounts = mtrDs$Count[i:(i+5)]
+    maxind=which.max(mtrDcounts)
+    mtr_variable=c(mtr_variable,mtrDs$State[i+(maxind-1)])
+    lineage_size=c(lineage_size,mtrDs$Lineage_size[i+(maxind-1)]) #No reason to make it this complex (copypasted). 
+  }
+  
+  #PenA state category
+  penAs = penA_mosaic_distribution(RLH = result,larger_than=larger_than)
+  penA_variable=c()
+  for(i in seq(1,nrow(penAs),4)){
+    penAscounts = penAs$Count[i:(i+3)]
+    maxind=which.max(penAscounts)
+    penA_variable=c(penA_variable,penAs$State[i+(maxind-1)])
+  }
+  lineage_age = find_lineage_age(result=result, larger_than=larger_than)
+  d1 = data.frame(lineage_size,penA_variable,mtr_variable,sex_variable, lineage_age)
+  return(d1)
+}
+
+
+```
+
+```{r Analysis and environment, echo=FALSE, include=FALSE}
+#Results for Norway
+cluster_times_NOR = clusters_and_times(Result_NOR, main_tree = tree)
+# neg_sizes_NOR = neg_sizes(cluster_times_NOR)
+# save(neg_sizes_NOR,file=paste0(path_results,"neg_NOR.Rdata"))
+load(file=paste0(path_results,"neg_NOR.Rdata"))
+# pdf(paste0(path_results,"neg_NOR_top20.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_NOR,root_date=1750, time_shift_list=cluster_times_NOR$time_shifts,xlimits=2010, logy=F)
+# dev.off()
+# pdf(paste0(path_results,"neg_NOR_top20_full_timeline.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_NOR,root_date=1750, time_shift_list=cluster_times_NOR$time_shifts,xlimits=NA, logy=F)
+# dev.off()
+
+
+#Results for AUSTRALIA
+cluster_times_AUS = clusters_and_times(Result_AUS, main_tree = tree)
+# neg_sizes_AUS = neg_sizes(cluster_times_AUS)
+# save(neg_sizes_AUS,file=paste0(path_results,"neg_AUS.Rdata"))
+load(file=paste0(path_results,"neg_AUS.Rdata"))
+# pdf(paste0(path_results,"neg_AUS_top20.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_AUS,root_date=1750, time_shift_list=cluster_times_AUS$time_shifts,xlimits=2010, logy=F)
+# dev.off()
+# pdf(paste0(path_results,"neg_AUS_top20_full_timeline.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_AUS,root_date=1750, time_shift_list=cluster_times_AUS$time_shifts,xlimits=NA, logy=F)
+# dev.off()
+
+#Results for USA
+cluster_times_USA = clusters_and_times(Result_USA, main_tree = tree)
+# neg_sizes_USA = neg_sizes(cluster_times_USA)
+# save(neg_sizes_USA,file=paste0(path_results,"neg_USA.Rdata"))
+load(file=paste0(path_results,"neg_USA.Rdata"))
+# pdf(paste0(path_results,"neg_USA_top20.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_USA,root_date=1750, time_shift_list=cluster_times_USA$time_shifts,xlimits=2010, logy=F)
+# dev.off()
+# pdf(paste0(path_results,"neg_USA_top20_full_timeline.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_USA,root_date=1750, time_shift_list=cluster_times_USA$time_shifts,xlimits=NA, logy=F)
+# dev.off()
+
+#Results for Europe
+cluster_times_EUR = clusters_and_times(Result_EUR, main_tree = tree)
+# neg_sizes_EUR = neg_sizes(cluster_times_EUR)
+# save(neg_sizes_EUR,file=paste0(path_results,"neg_EUR.Rdata"))
+load(file=paste0(path_results,"neg_EUR.Rdata"))
+# pdf(paste0(path_results,"neg_USA_top20.pdf"),width=15,height=15)
+#skygrowth_multiplot(neg_sizes_EUR,root_date=1750, time_shift_list=cluster_times_EUR$time_shifts,xlimits=2010, logy=F)
+# dev.off()
+# pdf(paste0(path_results,"neg_USA_top20_full_timeline.pdf"),width=15,height=15)
+# skygrowth_multiplot(neg_sizes_USA,root_date=1750, time_shift_list=cluster_times_USA$time_shifts,xlimits=NA, logy=F)
+# dev.off()
+
+#Notes: Sampling is different between the locations
+#The Australian collection, sampling stops in 2017 and starts in 2016 + some few genomes in 2004
+#For USA there are a few samples from 1997, some from 2009, 2010, and the main bulk from 2016-2018, 2017 has much less than the neighboring years. 
+#Thus we might extract the average growth rate in the period 2015-2017 for Australia, 2013-2018 for Norway, and  2009-2019 for USA? 
+
+
+#   ___________________________________________________________________________________________
+#   Can the growth rate be explained by explanatory variables such as sex distribution       ####
+
+#Extract the growth rates on the intervals 2014-2017: This may not be meaningful. 
+r_NOR = return_growth_interval(clusterwise_output=neg_sizes_NOR, time_shift_list=cluster_times_NOR)
+r_AUS = return_growth_interval(clusterwise_output=neg_sizes_AUS, time_shift_list=cluster_times_AUS)
+r_USA = return_growth_interval(clusterwise_output=neg_sizes_USA, time_shift_list=cluster_times_USA)
+r_EUR = return_growth_interval(clusterwise_output=neg_sizes_EUR, time_shift_list=cluster_times_EUR)
+r_all = c(r_NOR,r_AUS,r_USA,r_EUR)
+
+d1 = define_explanatory_variables(Result_NOR,larger_than=10)
+d2 = define_explanatory_variables(Result_AUS,larger_than=10)
+d3 = define_explanatory_variables(Result_USA,larger_than=10)
+d4 = define_explanatory_variables(Result_EUR,larger_than=10)
+
+
+#Gather data
+total_data = rbind(d1,d2,d3,d4)
+locations = c(rep("Norway",length(r_NOR)),rep("Australia",length(r_AUS)),rep("USA",length(r_USA)), rep("EUR",length(r_EUR)))
+total_data = cbind(r_all,locations,total_data) #Add growth rate
+colnames(total_data)= c("GrowthRate","locations", "tlSize","penA","mtr", "sexDistribution", "lineage_age") 
+
+#   ____________________________________________________________________________
+#   Report starts from here                                                 ####
+
+
+```
+
+## Modeling the growth rate of transmission lineages
+
+We are working on a project where we try to illuminate some aspect of lineage dynamics of *Neisseria gonorrhoeae*. We are focusing on four locations divided into small scale: Norway and Australia, and large scale: Europe and the USA. For each of the four geographical locations we have used [LineageHomology](https://github.com/magnusnosnes/LineageHomology) to define transmission lineages wrt. each of those locations. A "transmission lineage" is group of tips on a phylogeny that are are estimated to stem from the same importation event. Hence such groups may be used to retrospectively assess how important a single importation events in terms of onward transmission of the disease. \## **Research question** In this post I look at the relation between the growth rate of the lineages and the observed gender distribution of the infected hosts in the transmission lineages. The reason we wanted to investigate this question is that the the observed gender distribution of the hosts likely reflects the sexual network structure (such as heterosexual communities, men who have sex with men or mixed networks). We wanted to see if there were differences in the growth rate of the lineages depending on the networks they "inhabit".
+
+## A look at the data
+
+```{r, echo=FALSE, include = T, warning=F, message=F}
+g1 = ggplot(total_data, aes(x=sexDistribution, y=GrowthRate, color=locations, fill=locations))+theme_bw()+
+  geom_point()+ylab("Growth rate")+xlab("Gender distrbution in TL - fraction men")+theme(legend.position =c(0.2,0.8))+
+  ylim(c(0,5))
+g1
+
+```
+
+Looking at the data we thought that there may be some threshold in the observed fraction of men that are indicative of sexual network structure and hence could imply a different growth rate. Visual inspection of the data suggests that above 70% men there tends to be higher growth rates. This may indicate that we have a change-point around 0.7 like this:
+
+```{r, echo=FALSE, include = T, warning=F, message=F}
+g1 = ggplot(total_data, aes(x=sexDistribution, y=GrowthRate, color=locations, fill=locations))+theme_bw()+
+  geom_point()+ylab("Growth rate")+xlab("Gender distrbution in TL - fraction men")+theme(legend.position =c(0.2,0.8))+
+  ylim(c(0,5))+geom_segment(aes(x=0,xend=0.7,y=0.6,yend=0.6),color="darkblue",linetype="dashed")+
+  ylim(c(0,5))+geom_segment(aes(x=0.7,xend=1,y=1.5,yend=1.5),color="darkblue",linetype="dashed")
+g1
+#
+```
+
+Instead of defining this threshold ourselves from visual inspection, we wanted to formally estimate it from using the data, along with the and expected value of the growth rate above and below the threshhold.
+
+````{=html}
+<!--  ### Size of the transmission lineages
+
+```{r, echo=FALSE, include = T, warning=F, message=F, }
+g1 = ggplot(total_data,aes(x=sexDistribution, y=tlSize, color=locations, fill=locations))+theme_bw()+geom_point()+ylab("Transmission lineage size")+theme(legend.position="none")
+#+geom_smooth(method="lm", alpha=0.15)
+```
+ 
+```{r, echo=FALSE, include = T, warning=F, message=F, fig.width=8,fig.height=8}
+g2 = ggplot(total_data)+theme_bw()+geom_boxplot(aes(x=locations, y=tlSize,color=locations))+theme(legend.position = "none")+ylab("Transmission lineage size")
+g3 = ggplot(total_data)+theme_bw()+geom_boxplot(aes(x=mtr, y=tlSize))+ylab("Transmission lineage size")
+g4 = ggplot(total_data)+theme_bw()+geom_boxplot(aes(x=penA, y=tlSize))+ylab("Transmission lineage size")
+grid.arrange(g2,g3,g4,nrow=3,ncol=1)
+
+#boxplot(total_data$GrowthRate~as.factor(total_data$locations),ylab="Growth Rate", xlab="Transmission lineage size")
+```
+-->
+````
+
+```{r, echo=FALSE, include = F}
+total_data_modified = total_data #Modfied version of data
+total_data_modified$penA[which(total_data_modified$penA=="nd")]=NA #set nd to NA
+total_data_modified$penA[which(total_data_modified$penA=="semi-mosaic")]="mosaic" #set nd to NA
+total_data_modified$mtr[which(total_data_modified$mtr=="nd")]=NA
+total_data_modified$mtr[total_data_modified$mtr!="non-mosaic"]="mosaic"
+total_data_modified$mtr[total_data_modified$mtr=="semi-mosaic"]="mosaic"
+
+
+
+```
+
+```{r, echo=FALSE, include = T}
+#Pairwise comparisons between Norway and Australia and Europe and USA
+total_data_modified = total_data_modified[complete.cases(total_data_modified),]
+total_data_small_scale = total_data_modified[which(total_data_modified[,"locations"] %in% c("Norway", "Australia")),]
+total_data_large_scale = total_data_modified[which(total_data_modified[,"locations"] %in% c("EUR", "USA")),]
+
+
+small_scale = total_data_small_scale
+small_scale$locations = factor(small_scale$locations)
+#Refactor to change levels
+
+large_scale = total_data_large_scale
+large_scale$locations = factor(large_scale$locations)
+## NB NEED TO FACTOR COUNTRES differently when working with the array this way. 
+```
+
+## Bayesian change-point modeling
+
+To describe the "threshold" / "change-point" model we use the r-package [NIMBLE](https://r-nimble.org/) for statistical programming.
+
+## Change-point model
+
+### Defining data for NIMBLE
+
+Our data looks like:
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+library(nimble)
+
+head(small_scale[,c("GrowthRate","sexDistribution", "locations")])
+summary(small_scale[,c("GrowthRate","sexDistribution", "locations")])
+```
+
+NIMBLE requires the data and explanatory variables to in a named lists. Additionally we need to supply other constants that will be used in the model definition such as the length of the data "n".
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+data <- list(y=small_scale[,"GrowthRate"]) #The growthrate that we are trying to explain.
+n = length(small_scale[,"GrowthRate"]) #Number of data points
+constants = list(n=n, genderDistribution=small_scale$sexDistribution, #Constants to be used in the Nimblemodel
+                 location=as.numeric(as.factor(small_scale$locations)))
+
+```
+
+### Defining the change-point model in NIMBLE
+
+We specify an threshold parameter "alpha" as a continuous value on the scale [0,1] fraction of men. We assume that the mean growth rate in is different before and after, but similar for all values. We assume the the errors follow a normal distribution around a mean. For the change-point we assume a prior uniform distribution on the interval [0.5, 1].
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+changepoint <- nimbleCode({
+  
+  #Prior distributions 
+  alpha ~ dunif(0.5,1) #Changepoint
+  sigma1 ~ dunif(0, 5) # prior for variance components based on Gelman (2006)
+  for(k in 1:2){
+    mu1[k]~ dnorm(0, sd = 10) # Expected value before the change point
+    mu2[k]~ dnorm(0, sd = 10) # Expected value before the after the change point
+  }
+  
+  #Model
+  for(i in 1:n) {
+    turn_on[i] <- step(genderDistribution[i]-alpha) #0 if y[i] is smaller than and 1 otherwise.
+    mug[i] <- mu1[location[i]]*turn_on[i]+mu2[location[i]]*(1-turn_on[i]) #Switch means depending on if we are above or below the changepoint.
+    
+    #Likelihood of the data (growthrate)
+    y[i] ~ dnorm(mug[i],sigma1)
+  }
+})
+
+```
+
+### Setting initial values
+
+Before running the model we need to supply initial values to all the parameters to initialize the [MCMC](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo).
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+inits <- list(mu1 =c(1,1),mu2=c(1,1),
+              sigma1 = 1,
+              #sigma2 = 1,
+              alpha=0.8)
+```
+
+### Running the change-point model
+
+We run the model on the small scale data from Australia and Norway " and summarize the results on
+
+```{r, echo=T, include = T, warning=F, message=F,cache=T, eval = T}
+#Run the MCMC
+samples_small_scale = nimbleMCMC(code = changepoint, constants = constants,
+                       data = data, inits = inits,
+                       nchains = 2, niter = 1000000,
+                       summary = TRUE, WAIC = TRUE,thin = 100,
+                       monitors = c('mu1','mu2','sigma1',
+                                    #'sigma2',
+                                    'alpha'))
+
+```
+
+Next, we summarize results using the [MCMCvis](https://cran.r-project.org/web/packages/MCMCvis/index.html) r-package.
+
+### Australia and Norway
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+library(MCMCvis)
+MCMCsummary(object = samples_small_scale$samples)
+MCMCplot(object = samples_small_scale$samples,params=c("alpha"))
+
+```
+
+We ensure that the chains are mixing properly by inspecting the effective sample size (last column)
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+
+MCMCplot(object = samples_small_scale$samples,params=c("mu1", "mu2"))
+#MCMCtrace(object = samples_small_scale$samples,params=c("alpha")) #Look at the traceplots
+```
+
+mu1[1] and mu2[1] is the expected value above and below the change-point Australia, and mu1[2], mu1[2] for Norway. From the width
+
+### Europe and the USA
+
+```{r, echo=F, include = F, warning=F, message=F, eval=T}
+data <- list(y=large_scale[,1])
+constants = list(n=n, genderDistribution=large_scale$sexDistribution, location=as.numeric(as.factor(large_scale$locations)))
+inits <- list(mu1 =c(1,1),mu2=c(1,1),
+              sigma1 = 1,
+              #sigma2 = 1,
+              alpha=0.8)
+#Changepoint 1
+samples_large_scale = nimbleMCMC(code = changepoint, constants = constants,
+                       data = data, inits = inits,
+                       nchains = 2, niter = 1000000,nburnin = 1000000/2,
+                       summary = TRUE, WAIC = TRUE,thin = 100,
+                       monitors = c('mu1','mu2','sigma1',
+                                    #'sigma2',
+                                    'alpha'))
+```
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+MCMCsummary(object = samples_large_scale$samples)
+MCMCplot(object = samples_large_scale$samples,params=c("alpha"))
+MCMCplot(object = samples_large_scale$samples,params=c("mu1", "mu2"))
+#MCMCtrace(object = samples_large_scale$samples,params=c("alpha")) #Look at the traceplots
+```
+
+## Regression model
+
+We use the same dataset but change to a regression model.
+
+### Defining the model
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+regression <- nimbleCode({
+  
+  sigma1 ~ dunif(0, 5)        # prior for variance components based on Gelman (2006)
+  
+  #Priors for regression slope
+  for(k in 1:2){
+    mu1[k]~ dnorm(0, sd = 10) 
+    beta[k] ~ dnorm(0, sd = 10) #Regression slope
+  }
+  
+  
+  
+  for(i in 1:n) {
+    mug[i] <- mu1[location[i]]+beta[location[i]]*genderDistribution[i] #Define the expected value
+    
+    #Likelihood of the growth rate
+    y[i] ~ dnorm(mug[i],sigma1)
+  }
+})
+
+
+```
+
+### Norway and Australia
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+data <- list(y=small_scale[,1])
+constants = list(n=n, genderDistribution=small_scale$sexDistribution,
+                 location=as.numeric(as.factor(small_scale$locations)))
+inits <- list(mu1 =c(1,1),
+              sigma1 = 1,
+              #sigma2 = 1,
+              beta=c(0.8,0.8))
+
+regression_samples_small_scale = nimbleMCMC(code = regression, constants = constants,
+                       data = data, inits = inits,
+                       nchains = 2, niter = 1000000,nburnin = 1000000/2,
+                       summary = TRUE, WAIC = TRUE,thin = 100,
+                       monitors = c('mu1',
+                                    'sigma1',
+                                    'beta'))
+par(mfrow=c(1,1))
+MCMCsummary(object = regression_samples_small_scale$samples)
+MCMCplot(object = regression_samples_small_scale$samples,params=c("mu1","beta"))
+#MCMCtrace(object = regression_samples_small_scale$samples,params=c("beta"))
+
+```
+
+### Europe and the USA
+
+```{r, echo=T, include = T, warning=F, message=F, eval=T}
+data <- list(y=large_scale[,1])
+constants = list(n=n, genderDistribution=large_scale$sexDistribution,
+                 location=as.numeric(as.factor(large_scale$locations)))
+inits <- list(mu1 =c(1,1),
+              sigma1 = 1,
+              #sigma2 = 1,
+              beta=c(0.8,0.8))
+
+regression_samples_large_scale = nimbleMCMC(code = regression, constants = constants,
+                       data = data, inits = inits,
+                       nchains = 2, niter = 1000000,nburnin = 1000000/2,
+                       summary = TRUE, WAIC = TRUE,thin = 100,
+                       monitors = c('mu1',
+                                    'sigma1',
+                                    'beta'))
+par(mfrow=c(1,1))
+MCMCsummary(object = regression_samples_large_scale$samples)
+MCMCplot(object = regression_samples_large_scale$samples,params=c("mu1","beta"))
+#MCMCtrace(object = regression_samples_large_scale$samples,params=c("beta"))
+```
+
+## Summing up
+
+Although visually inspection indicated a change-point in the data. We are unable to estimate such a point with a narrow credibility interval based on the data. The regression model find any effect of sex-distribution (regression slope 97.5% credibility interval covered zero for all locations. Hence we remain uncertain that a change point exists and if the observed gender distribution in a transmission lineage can be used to determine its growth rate.

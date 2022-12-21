@@ -222,7 +222,7 @@ params:
         image: /images/projects/Placeholder_pneumococci.png
         featured:
           name: Project website
-          link: https://disentangling-streptococcus-amr.netlify.app/
+          link: https://disentangling-amr-streptococcus.netlify.app
         # badges:
         #   - "Hugo"
         #   - "Bootstrap"

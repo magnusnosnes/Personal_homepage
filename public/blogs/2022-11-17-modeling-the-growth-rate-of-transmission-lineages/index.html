@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html>
+
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link rel="icon" href=/rodent.png type="image/gif">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Alata&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Alata&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      media="print" onload="this.media='all'" />
+<noscript>
+  <link
+          href="https://fonts.googleapis.com/css2?family=Alata&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+          rel="stylesheet">
+</noscript>
+
+
+<link rel="stylesheet" href="/css/font.css" media="all">
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-DWJJVE27WD', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+<meta property="og:title" content="Bayesian change-point modeling using Nimble" />
+<meta property="og:description" content="Modeling the growth rate of transmission lineages We are working on a project where we try to illuminate some aspect of lineage dynamics of Neisseria gonorrhoeae. We are focusing on four locations divided into small scale: Norway and Australia, and large scale: Europe and the USA. For each of the four geographical locations we have used LineageHomology to define transmission lineages wrt. each of those locations. A “transmission lineage” is group of tips on a phylogeny that are are estimated to stem from the same importation event." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/" /><meta property="article:section" content="blogs" />
+<meta property="article:published_time" content="2022-11-17T00:00:00+00:00" />
+<meta property="article:modified_time" content="2022-11-17T00:00:00+00:00" /><meta property="og:site_name" content="Magnus Nygård Osnes" />
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Bayesian change-point modeling using Nimble"/>
+<meta name="twitter:description" content="Modeling the growth rate of transmission lineages We are working on a project where we try to illuminate some aspect of lineage dynamics of Neisseria gonorrhoeae. We are focusing on four locations divided into small scale: Norway and Australia, and large scale: Europe and the USA. For each of the four geographical locations we have used LineageHomology to define transmission lineages wrt. each of those locations. A “transmission lineage” is group of tips on a phylogeny that are are estimated to stem from the same importation event."/>
+
+
+<link rel="stylesheet" href="/bootstrap-5/css/bootstrap.min.css" media="all"><link rel="stylesheet" href="/css/header.css" media="all">
+<link rel="stylesheet" href="/css/footer.css" media="all">
+
+
+<link rel="stylesheet" href="/css/theme.css" media="all">
+
+
+
+
+<style>
+    :root {
+        --text-color: #393c61;
+        --text-secondary-color: #999999;
+        --background-color: #ffffff;
+        --secondary-background-color: #ffffff;
+        --primary-color: #1a5a41;
+        --secondary-color: #cceee4;
+
+         
+        --text-color-dark: #e4e6eb;
+        --text-secondary-color-dark: #b0b3b8;
+        --background-color-dark: #18191a;
+        --secondary-background-color-dark: #212529;
+        --primary-color-dark: #ffffff;
+        --secondary-color-dark: #212529;
+    }
+    body {
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: left;
+    }
+</style>
+
+<meta name="description" content="">
+<link rel="stylesheet" href="/css/single.css">
+
+
+<script defer src="/fontawesome-5/all-5.15.4.js"></script>
+
+  <title>
+Bayesian change-point modeling using Nimble | Homepage Magnus Nygård Osnes
+
+  </title>
+</head>
+
+<body class="light" onload="loading()">
+  
+  
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+
+
+<header>
+    <nav class="pt-3 navbar navbar-expand-lg animate">
+        <div class="container-fluid mx-xs-2 mx-sm-5 mx-md-5 mx-lg-5">
+            
+            <a class="navbar-brand primary-font text-wrap" href="/">
+                
+                <img src="/rodent.png" width="30" height="30"
+                    class="d-inline-block align-top">
+                Magnus Nygård Osnes
+                
+            </a>
+
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <svg aria-hidden="true" height="24" viewBox="0 0 16 16" version="1.1" width="24" data-view-component="true">
+                    <path fill-rule="evenodd" d="M1 2.75A.75.75 0 011.75 2h12.5a.75.75 0 110 1.5H1.75A.75.75 0 011 2.75zm0 5A.75.75 0 011.75 7h12.5a.75.75 0 110 1.5H1.75A.75.75 0 011 7.75zM1.75 12a.75.75 0 100 1.5h12.5a.75.75 0 100-1.5H1.75z"></path>
+                </svg>
+            </button>
+
+            
+            <div class="collapse navbar-collapse text-wrap primary-font" id="navbarContent">
+                <ul class="navbar-nav ms-auto text-center">
+                    
+                    <li class="nav-item navbar-text">
+                        <a class="nav-link" href="/#about" aria-label="about">About</a>
+                    </li>
+                    
+
+                    
+
+                    
+
+                    
+                    <li class="nav-item navbar-text">
+                        <a class="nav-link" href="/#projects"
+                            aria-label="projects">Projects</a>
+                    </li>
+                    
+
+                    
+
+                    
+                    <li class="nav-item navbar-text">
+                        <a class="nav-link" href="/#contact"
+                            aria-label="contact">Contact</a>
+                    </li>
+                    
+
+                    
+                    
+                    
+                    
+                    <li class="nav-item navbar-text">
+                        <a class="nav-link" href="/blogs" title="Blog posts">
+                            
+                            Blog
+                        </a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+                
+                <div class="text-center">
+                    <button id="theme-toggle">
+                        <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                </div>
+            
+                
+            </div>
+        </div>
+    </nav>
+</header>
+<div id="content">
+<section id="single">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-sm-12 col-md-12 col-lg-9">
+        <div class="pr-lg-4">
+          <div class="title mb-5">
+            <h1 class="text-center mb-4">Bayesian change-point modeling using Nimble</h1>
+            <div class="text-center">
+              Magnus Nygård Osnes 
+              <small>|</small>
+              Nov 17, 2022
+            </div>
+          </div>
+          
+          <article class="page-content  p-2">
+          <h2 id="modeling-the-growth-rate-of-transmission-lineages">Modeling the growth rate of transmission lineages</h2>
+<p>We are working on a project where we try to illuminate some aspect of lineage dynamics of <em>Neisseria gonorrhoeae</em>. We are focusing on four locations divided into small scale: Norway and Australia, and large scale: Europe and the USA. For each of the four geographical locations we have used <a href="https://github.com/magnusnosnes/LineageHomology">LineageHomology</a> to define transmission lineages wrt. each of those locations. A “transmission lineage” is group of tips on a phylogeny that are are estimated to stem from the same importation event. Hence such groups may be used to retrospectively assess how important a single importation events in terms of onward transmission of the disease. ## <strong>Research question</strong> In this post I look at the relation between the growth rate of the lineages and the observed gender distribution of the infected hosts in the transmission lineages. The reason we wanted to investigate this question is that the the observed gender distribution of the hosts likely reflects the sexual network structure (such as heterosexual communities, men who have sex with men or mixed networks). We wanted to see if there were differences in the growth rate of the lineages depending on the networks they “inhabit”.</p>
+<h2 id="a-look-at-the-data">A look at the data</h2>
+<img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-1-1.png" width="672" />
+<p>Looking at the data we thought that there may be some threshold in the observed fraction of men that are indicative of sexual network structure and hence could imply a different growth rate. Visual inspection of the data suggests that above 70% men there tends to be higher growth rates. This may indicate that we have a change-point around 0.7 like this:</p>
+<img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-2-1.png" width="672" />
+<p>Instead of defining this threshold ourselves from visual inspection, we wanted to formally estimate it from using the data, along with the and expected value of the growth rate above and below the threshhold.</p>
+<!--  ### Size of the transmission lineages
+
+
+ 
+<img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-4-1.png" width="768" />
+-->
+<h2 id="bayesian-change-point-modeling">Bayesian change-point modeling</h2>
+<p>To describe the “threshold” / “change-point” model we use the r-package <a href="https://r-nimble.org/">NIMBLE</a> for statistical programming.</p>
+<h2 id="change-point-model">Change-point model</h2>
+<h3 id="defining-data-for-nimble">Defining data for NIMBLE</h3>
+<p>Our data looks like:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#a6e22e">library</span>(nimble)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">head</span>(small_scale[,<span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;GrowthRate&#34;</span>,<span style="color:#e6db74">&#34;sexDistribution&#34;</span>, <span style="color:#e6db74">&#34;locations&#34;</span>)])
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##    GrowthRate sexDistribution locations</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 1 0.161981919       0.9944134    Norway</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 2 0.370304650       0.9666667    Norway</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 3 1.070982756       0.5795455    Norway</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 4 0.350432551       0.9759036    Norway</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 5 2.829087867       0.9565217    Norway</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 6 0.009947276       0.8596491    Norway</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">summary</span>(small_scale[,<span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;GrowthRate&#34;</span>,<span style="color:#e6db74">&#34;sexDistribution&#34;</span>, <span style="color:#e6db74">&#34;locations&#34;</span>)])
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##    GrowthRate       sexDistribution      locations </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##  Min.   :-0.06797   Min.   :0.2857   Australia:30  </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##  1st Qu.: 0.17727   1st Qu.:0.7500   Norway   :20  </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##  Median : 0.60928   Median :0.8750                 </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##  Mean   : 0.93092   Mean   :0.8350                 </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##  3rd Qu.: 1.38518   3rd Qu.:0.9286                 </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##  Max.   : 4.50239   Max.   :1.0000</span>
+</span></span></code></pre></div><p>NIMBLE requires the data and explanatory variables to in a named lists. Additionally we need to supply other constants that will be used in the model definition such as the length of the data “n”.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>data <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">list</span>(y<span style="color:#f92672">=</span>small_scale[,<span style="color:#e6db74">&#34;GrowthRate&#34;</span>]) <span style="color:#75715e">#The growthrate that we are trying to explain.</span>
+</span></span><span style="display:flex;"><span>n <span style="color:#f92672">=</span> <span style="color:#a6e22e">length</span>(small_scale[,<span style="color:#e6db74">&#34;GrowthRate&#34;</span>]) <span style="color:#75715e">#Number of data points</span>
+</span></span><span style="display:flex;"><span>constants <span style="color:#f92672">=</span> <span style="color:#a6e22e">list</span>(n<span style="color:#f92672">=</span>n, genderDistribution<span style="color:#f92672">=</span>small_scale<span style="color:#f92672">$</span>sexDistribution, <span style="color:#75715e">#Constants to be used in the Nimblemodel</span>
+</span></span><span style="display:flex;"><span>                 location<span style="color:#f92672">=</span><span style="color:#a6e22e">as.numeric</span>(<span style="color:#a6e22e">as.factor</span>(small_scale<span style="color:#f92672">$</span>locations)))
+</span></span></code></pre></div><h3 id="defining-the-change-point-model-in-nimble">Defining the change-point model in NIMBLE</h3>
+<p>We specify an threshold parameter “alpha” as a continuous value on the scale [0,1] fraction of men. We assume that the mean growth rate in is different before and after, but similar for all values. We assume the the errors follow a normal distribution around a mean. For the change-point we assume a prior uniform distribution on the interval [0.5, 1].</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>changepoint <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">nimbleCode</span>({
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#Prior distributions </span>
+</span></span><span style="display:flex;"><span>  alpha <span style="color:#f92672">~</span> <span style="color:#a6e22e">dunif</span>(<span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">1</span>) <span style="color:#75715e">#Changepoint</span>
+</span></span><span style="display:flex;"><span>  sigma1 <span style="color:#f92672">~</span> <span style="color:#a6e22e">dunif</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">5</span>) <span style="color:#75715e"># prior for variance components based on Gelman (2006)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">for</span>(k in <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">2</span>){
+</span></span><span style="display:flex;"><span>    mu1[k]<span style="color:#f92672">~</span> <span style="color:#a6e22e">dnorm</span>(<span style="color:#ae81ff">0</span>, sd <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>) <span style="color:#75715e"># Expected value before the change point</span>
+</span></span><span style="display:flex;"><span>    mu2[k]<span style="color:#f92672">~</span> <span style="color:#a6e22e">dnorm</span>(<span style="color:#ae81ff">0</span>, sd <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>) <span style="color:#75715e"># Expected value before the after the change point</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#Model</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">for</span>(i in <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>n) {
+</span></span><span style="display:flex;"><span>    turn_on[i] <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">step</span>(genderDistribution[i]<span style="color:#f92672">-</span>alpha) <span style="color:#75715e">#0 if y[i] is smaller than and 1 otherwise.</span>
+</span></span><span style="display:flex;"><span>    mug[i] <span style="color:#f92672">&lt;-</span> mu1[location[i]]<span style="color:#f92672">*</span>turn_on[i]<span style="color:#f92672">+</span>mu2[location[i]]<span style="color:#f92672">*</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">-</span>turn_on[i]) <span style="color:#75715e">#Switch means depending on if we are above or below the changepoint.</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#Likelihood of the data (growthrate)</span>
+</span></span><span style="display:flex;"><span>    y[i] <span style="color:#f92672">~</span> <span style="color:#a6e22e">dnorm</span>(mug[i],sigma1)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>})
+</span></span></code></pre></div><h3 id="setting-initial-values">Setting initial values</h3>
+<p>Before running the model we need to supply initial values to all the parameters to initialize the <a href="https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">MCMC</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>inits <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">list</span>(mu1 <span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>),mu2<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>),
+</span></span><span style="display:flex;"><span>              sigma1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>              <span style="color:#75715e">#sigma2 = 1,</span>
+</span></span><span style="display:flex;"><span>              alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.8</span>)
+</span></span></code></pre></div><h3 id="running-the-change-point-model">Running the change-point model</h3>
+<p>We run the model on the small scale data from Australia and Norway ” and summarize the results on</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#75715e">#Run the MCMC</span>
+</span></span><span style="display:flex;"><span>samples_small_scale <span style="color:#f92672">=</span> <span style="color:#a6e22e">nimbleMCMC</span>(code <span style="color:#f92672">=</span> changepoint, constants <span style="color:#f92672">=</span> constants,
+</span></span><span style="display:flex;"><span>                       data <span style="color:#f92672">=</span> data, inits <span style="color:#f92672">=</span> inits,
+</span></span><span style="display:flex;"><span>                       nchains <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>, niter <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000000</span>,
+</span></span><span style="display:flex;"><span>                       summary <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>, WAIC <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>,thin <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>,
+</span></span><span style="display:flex;"><span>                       monitors <span style="color:#f92672">=</span> <span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#39;mu1&#39;</span>,<span style="color:#e6db74">&#39;mu2&#39;</span>,<span style="color:#e6db74">&#39;sigma1&#39;</span>,
+</span></span><span style="display:flex;"><span>                                    <span style="color:#75715e">#&#39;sigma2&#39;,</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#39;alpha&#39;</span>))
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------|-------------|-------------|-------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------------------------------------------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------|-------------|-------------|-------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------------------------------------------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##   [Warning] There are individual pWAIC values that are greater than 0.4. This may indicate that the WAIC estimate is unstable (Vehtari et al., 2017), at least in cases without grouping of data nodes or multivariate data nodes.</span>
+</span></span></code></pre></div><p>Next, we summarize results using the <a href="https://cran.r-project.org/web/packages/MCMCvis/index.html">MCMCvis</a> r-package.</p>
+<h3 id="australia-and-norway">Australia and Norway</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#a6e22e">library</span>(MCMCvis)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCsummary</span>(object <span style="color:#f92672">=</span> samples_small_scale<span style="color:#f92672">$</span>samples)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##             mean        sd         2.5%       50%      97.5% Rhat n.eff</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## alpha  0.6677818 0.1791179   0.50327949 0.5663644  0.9959115    1  6684</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[1] 0.9824472 3.8958175  -9.59835442 1.1865059  9.5462415    1 20000</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[2] 0.5530838 0.2959798  -0.03316428 0.5512741  1.1554907    1 20000</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu2[1] 0.5716374 7.8573234 -17.32340834 1.2563820 17.2369773    1 20115</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu2[2] 0.2767973 0.5462392  -0.89603444 0.3190279  1.3150664    1 19152</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## sigma1 1.1223159 0.2313403   0.71645324 1.1062569  1.6264014    1 20325</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCplot</span>(object <span style="color:#f92672">=</span> samples_small_scale<span style="color:#f92672">$</span>samples,params<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;alpha&#34;</span>))
+</span></span></code></pre></div><img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-12-1.png" width="672" />
+<p>We ensure that the chains are mixing properly by inspecting the effective sample size (last column)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCplot</span>(object <span style="color:#f92672">=</span> samples_small_scale<span style="color:#f92672">$</span>samples,params<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;mu1&#34;</span>, <span style="color:#e6db74">&#34;mu2&#34;</span>))
+</span></span></code></pre></div><img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-13-1.png" width="672" />
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#75715e">#MCMCtrace(object = samples_small_scale$samples,params=c(&#34;alpha&#34;)) #Look at the traceplots</span>
+</span></span></code></pre></div><p>mu1[1] and mu2[1] is the expected value above and below the change-point Australia, and mu1[2], mu1[2] for Norway. From the width</p>
+<h3 id="europe-and-the-usa">Europe and the USA</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#a6e22e">MCMCsummary</span>(object <span style="color:#f92672">=</span> samples_large_scale<span style="color:#f92672">$</span>samples)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##             mean         sd        2.5%        50%     97.5% Rhat n.eff</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## alpha  0.9314393 0.08110011  0.71532038 0.96714021 0.9987211    1 10315</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[1] 0.1338956 0.28843610 -0.51585054 0.14071660 0.7336394    1 10000</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[2] 0.5182609 0.35910112 -0.03367521 0.49459113 1.2640045    1 10476</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu2[1] 0.1999654 0.13375860 -0.05993548 0.19689025 0.4765697    1 10213</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu2[2] 0.1017999 0.10303781 -0.09277714 0.09853546 0.3138090    1 10000</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## sigma1 4.7388575 0.24570241  4.09715258 4.81082907 4.9929444    1 10000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCplot</span>(object <span style="color:#f92672">=</span> samples_large_scale<span style="color:#f92672">$</span>samples,params<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;alpha&#34;</span>))
+</span></span></code></pre></div><img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-15-1.png" width="672" />
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#a6e22e">MCMCplot</span>(object <span style="color:#f92672">=</span> samples_large_scale<span style="color:#f92672">$</span>samples,params<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;mu1&#34;</span>, <span style="color:#e6db74">&#34;mu2&#34;</span>))
+</span></span></code></pre></div><img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-15-2.png" width="672" />
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#75715e">#MCMCtrace(object = samples_large_scale$samples,params=c(&#34;alpha&#34;)) #Look at the traceplots</span>
+</span></span></code></pre></div><h2 id="regression-model">Regression model</h2>
+<p>We use the same dataset but change to a regression model.</p>
+<h3 id="defining-the-model">Defining the model</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>regression <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">nimbleCode</span>({
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  sigma1 <span style="color:#f92672">~</span> <span style="color:#a6e22e">dunif</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">5</span>)        <span style="color:#75715e"># prior for variance components based on Gelman (2006)</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#Priors for regression slope</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">for</span>(k in <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">2</span>){
+</span></span><span style="display:flex;"><span>    mu1[k]<span style="color:#f92672">~</span> <span style="color:#a6e22e">dnorm</span>(<span style="color:#ae81ff">0</span>, sd <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>) 
+</span></span><span style="display:flex;"><span>    beta[k] <span style="color:#f92672">~</span> <span style="color:#a6e22e">dnorm</span>(<span style="color:#ae81ff">0</span>, sd <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>) <span style="color:#75715e">#Regression slope</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">for</span>(i in <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>n) {
+</span></span><span style="display:flex;"><span>    mug[i] <span style="color:#f92672">&lt;-</span> mu1[location[i]]<span style="color:#f92672">+</span>beta[location[i]]<span style="color:#f92672">*</span>genderDistribution[i] <span style="color:#75715e">#Define the expected value</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#Likelihood of the growth rate</span>
+</span></span><span style="display:flex;"><span>    y[i] <span style="color:#f92672">~</span> <span style="color:#a6e22e">dnorm</span>(mug[i],sigma1)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>})
+</span></span></code></pre></div><h3 id="norway-and-australia">Norway and Australia</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>data <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">list</span>(y<span style="color:#f92672">=</span>small_scale[,<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>constants <span style="color:#f92672">=</span> <span style="color:#a6e22e">list</span>(n<span style="color:#f92672">=</span>n, genderDistribution<span style="color:#f92672">=</span>small_scale<span style="color:#f92672">$</span>sexDistribution,
+</span></span><span style="display:flex;"><span>                 location<span style="color:#f92672">=</span><span style="color:#a6e22e">as.numeric</span>(<span style="color:#a6e22e">as.factor</span>(small_scale<span style="color:#f92672">$</span>locations)))
+</span></span><span style="display:flex;"><span>inits <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">list</span>(mu1 <span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>),
+</span></span><span style="display:flex;"><span>              sigma1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>              <span style="color:#75715e">#sigma2 = 1,</span>
+</span></span><span style="display:flex;"><span>              beta<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">0.8</span>,<span style="color:#ae81ff">0.8</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>regression_samples_small_scale <span style="color:#f92672">=</span> <span style="color:#a6e22e">nimbleMCMC</span>(code <span style="color:#f92672">=</span> regression, constants <span style="color:#f92672">=</span> constants,
+</span></span><span style="display:flex;"><span>                       data <span style="color:#f92672">=</span> data, inits <span style="color:#f92672">=</span> inits,
+</span></span><span style="display:flex;"><span>                       nchains <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>, niter <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000000</span>,nburnin <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000000</span><span style="color:#f92672">/</span><span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>                       summary <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>, WAIC <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>,thin <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>,
+</span></span><span style="display:flex;"><span>                       monitors <span style="color:#f92672">=</span> <span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#39;mu1&#39;</span>,
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#39;sigma1&#39;</span>,
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#39;beta&#39;</span>))
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------|-------------|-------------|-------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------------------------------------------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------|-------------|-------------|-------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------------------------------------------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##   [Warning] There are individual pWAIC values that are greater than 0.4. This may indicate that the WAIC estimate is unstable (Vehtari et al., 2017), at least in cases without grouping of data nodes or multivariate data nodes.</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">par</span>(mfrow<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCsummary</span>(object <span style="color:#f92672">=</span> regression_samples_small_scale<span style="color:#f92672">$</span>samples)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##                mean        sd       2.5%        50%    97.5% Rhat n.eff</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## beta[1] -2.21144862 2.0655486 -6.2728213 -2.2330787 1.808282    1  4693</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## beta[2]  0.56143496 1.0625851 -1.5663978  0.5804113 2.651546    1 10299</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[1]   3.09452913 1.7571339 -0.3373730  3.1101156 6.538150    1  4689</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[2]   0.03882466 0.8947434 -1.7045187  0.0328491 1.824354    1 10337</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## sigma1   1.12868494 0.2313801  0.7213114  1.1101052 1.621900    1 11386</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCplot</span>(object <span style="color:#f92672">=</span> regression_samples_small_scale<span style="color:#f92672">$</span>samples,params<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;mu1&#34;</span>,<span style="color:#e6db74">&#34;beta&#34;</span>))
+</span></span></code></pre></div><img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-17-1.png" width="672" />
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#75715e">#MCMCtrace(object = regression_samples_small_scale$samples,params=c(&#34;beta&#34;))</span>
+</span></span></code></pre></div><h3 id="europe-and-the-usa-1">Europe and the USA</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>data <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">list</span>(y<span style="color:#f92672">=</span>large_scale[,<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>constants <span style="color:#f92672">=</span> <span style="color:#a6e22e">list</span>(n<span style="color:#f92672">=</span>n, genderDistribution<span style="color:#f92672">=</span>large_scale<span style="color:#f92672">$</span>sexDistribution,
+</span></span><span style="display:flex;"><span>                 location<span style="color:#f92672">=</span><span style="color:#a6e22e">as.numeric</span>(<span style="color:#a6e22e">as.factor</span>(large_scale<span style="color:#f92672">$</span>locations)))
+</span></span><span style="display:flex;"><span>inits <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">list</span>(mu1 <span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>),
+</span></span><span style="display:flex;"><span>              sigma1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>              <span style="color:#75715e">#sigma2 = 1,</span>
+</span></span><span style="display:flex;"><span>              beta<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">0.8</span>,<span style="color:#ae81ff">0.8</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>regression_samples_large_scale <span style="color:#f92672">=</span> <span style="color:#a6e22e">nimbleMCMC</span>(code <span style="color:#f92672">=</span> regression, constants <span style="color:#f92672">=</span> constants,
+</span></span><span style="display:flex;"><span>                       data <span style="color:#f92672">=</span> data, inits <span style="color:#f92672">=</span> inits,
+</span></span><span style="display:flex;"><span>                       nchains <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>, niter <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000000</span>,nburnin <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000000</span><span style="color:#f92672">/</span><span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>                       summary <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>, WAIC <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>,thin <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>,
+</span></span><span style="display:flex;"><span>                       monitors <span style="color:#f92672">=</span> <span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#39;mu1&#39;</span>,
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#39;sigma1&#39;</span>,
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#39;beta&#39;</span>))
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------|-------------|-------------|-------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------------------------------------------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------|-------------|-------------|-------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## |-------------------------------------------------------|</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##   [Warning] There are individual pWAIC values that are greater than 0.4. This may indicate that the WAIC estimate is unstable (Vehtari et al., 2017), at least in cases without grouping of data nodes or multivariate data nodes.</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">par</span>(mfrow<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCsummary</span>(object <span style="color:#f92672">=</span> regression_samples_large_scale<span style="color:#f92672">$</span>samples)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">##                mean        sd       2.5%         50%     97.5% Rhat n.eff</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## beta[1] -0.18467150 0.6040629 -1.3913003 -0.17793571 0.9790354    1  9445</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## beta[2]  0.03587699 0.5229691 -0.9904779  0.03742878 1.0572973    1 10003</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[1]   0.33209881 0.5029887 -0.6484135  0.32995573 1.3335549    1  9415</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## mu1[2]   0.10457476 0.4209626 -0.7157290  0.10495709 0.9319498    1 10040</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## sigma1   4.72455469 0.2564046  4.0559068  4.79786131 4.9915727    1 10000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">MCMCplot</span>(object <span style="color:#f92672">=</span> regression_samples_large_scale<span style="color:#f92672">$</span>samples,params<span style="color:#f92672">=</span><span style="color:#a6e22e">c</span>(<span style="color:#e6db74">&#34;mu1&#34;</span>,<span style="color:#e6db74">&#34;beta&#34;</span>))
+</span></span></code></pre></div><img src="https://magnusnosnes.netlify.app/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/index_files/figure-html/unnamed-chunk-18-1.png" width="672" />
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#75715e">#MCMCtrace(object = regression_samples_large_scale$samples,params=c(&#34;beta&#34;))</span>
+</span></span></code></pre></div><h2 id="summing-up">Summing up</h2>
+<p>Although visually inspection indicated a change-point in the data. We are unable to estimate such a point with a narrow credibility interval based on the data. The regression model find any effect of sex-distribution (regression slope 97.5% credibility interval covered zero for all locations. Hence we remain uncertain that a change point exists and if the observed gender distribution in a transmission lineage can be used to determine its growth rate.</p>
+
+          </article>
+        </div>
+      </div>
+      <div class="col-sm-12 col-md-12 col-lg-3">
+        <div class="sticky-sidebar">
+          
+          <aside class="toc">
+              <h5>
+                Table Of Contents
+              </h5>
+              <div class="toc-content">
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#modeling-the-growth-rate-of-transmission-lineages">Modeling the growth rate of transmission lineages</a></li>
+    <li><a href="#a-look-at-the-data">A look at the data</a></li>
+    <li><a href="#bayesian-change-point-modeling">Bayesian change-point modeling</a></li>
+    <li><a href="#change-point-model">Change-point model</a>
+      <ul>
+        <li><a href="#defining-data-for-nimble">Defining data for NIMBLE</a></li>
+        <li><a href="#defining-the-change-point-model-in-nimble">Defining the change-point model in NIMBLE</a></li>
+        <li><a href="#setting-initial-values">Setting initial values</a></li>
+        <li><a href="#running-the-change-point-model">Running the change-point model</a></li>
+        <li><a href="#australia-and-norway">Australia and Norway</a></li>
+        <li><a href="#europe-and-the-usa">Europe and the USA</a></li>
+      </ul>
+    </li>
+    <li><a href="#regression-model">Regression model</a>
+      <ul>
+        <li><a href="#defining-the-model">Defining the model</a></li>
+        <li><a href="#norway-and-australia">Norway and Australia</a></li>
+        <li><a href="#europe-and-the-usa-1">Europe and the USA</a></li>
+      </ul>
+    </li>
+    <li><a href="#summing-up">Summing up</a></li>
+  </ul>
+</nav>
+              </div>
+          </aside>
+          
+
+          
+
+          
+          <aside class="social">
+            <h5>Social</h5>
+            <div class="social-content">
+              <ul class="list-inline">
+                <li class="list-inline-item text-center">
+                  <a target="_blank" href="https://twitter.com/share?text=Bayesian%20change-point%20modeling%20using%20Nimble&url=https%3a%2f%2fmagnusnosnes.netlify.app%2fblogs%2f2022-11-17-modeling-the-growth-rate-of-transmission-lineages%2f">
+                    <i class="fab fa-twitter"></i>
+                  </a>
+                </li>
+                <li class="list-inline-item text-center">
+                  <a target="_blank" href="https://api.whatsapp.com/send?text=Bayesian%20change-point%20modeling%20using%20Nimble: https%3a%2f%2fmagnusnosnes.netlify.app%2fblogs%2f2022-11-17-modeling-the-growth-rate-of-transmission-lineages%2f">
+                    <i class="fab fa-whatsapp"></i>
+                  </a>
+                </li>
+                <li class="list-inline-item text-center">
+                  <a target="_blank" href="mailto:?subject=Bayesian%20change-point%20modeling%20using%20Nimble&amp;body=Check out this site https%3a%2f%2fmagnusnosnes.netlify.app%2fblogs%2f2022-11-17-modeling-the-growth-rate-of-transmission-lineages%2f">
+                    <i class="fa fa-envelope"></i>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </aside>
+          
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12 col-md-12 col-lg-9 p-4">
+        <div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "gurusabarish" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+  </div>
+  <button class="p-2 px-3" onclick="topFunction()" id="topScroll">
+    <i class="fas fa-angle-up"></i>
+  </button>
+</section>
+
+<script>
+  var topScroll = document.getElementById("topScroll");
+  window.onscroll = function() {scrollFunction()};
+
+  function scrollFunction() {
+    if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+      topScroll.style.display = "block";
+    } else {
+      topScroll.style.display = "none";
+    }
+  }
+
+  function topFunction() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+</script>
+
+
+  </div><footer>
+    <div class="container py-3" id="recent-posts">
+    
+    <div class="h3 text-center text-secondary py-3">Recent posts</div>
+    <div class="row justify-content-center">
+        
+        <div class="col-lg-4 col-md-6 pt-2">
+            <div class="card h-100">
+                <div class="card-body bg-transparent p-3 shadow-sm">
+                    <a href="/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/" class="primary-font card-title">
+                        <h5 class="card-title bg-transparent" title="Bayesian change-point modeling using Nimble">Bayesian change-point …</h5>
+                    </a>
+                    <div class="card-text secondary-font">
+                        <p>Modeling the growth rate of transmission lineages We are working on a project where we try to illuminate some aspect of lineage dynamics of Neisseria gonorrhoeae. We are focusing on four locations divided into small scale: Norway and Australia, and large scale: Europe and the USA. For each of the …</p>
+                    </div>
+                </div>
+                <div class="mt-auto card-footer">
+                    <span class="float-start">November 17, 2022</span>
+                    <a href="/blogs/2022-11-17-modeling-the-growth-rate-of-transmission-lineages/" class="float-end btn btn-outline-info btn-sm">Read</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 pt-2">
+            <div class="card h-100">
+                <div class="card-body bg-transparent p-3 shadow-sm">
+                    <a href="/blogs/2022-11-09-rmarkdown-blogdown-hugo-github-netlify/" class="primary-font card-title">
+                        <h5 class="card-title bg-transparent" title="Rmarkdown -&gt; Blogdown -&gt; Hugo -&gt; Github -&gt; Netlify">Rmarkdown -&gt; Blogdown -&gt; …</h5>
+                    </a>
+                    <div class="card-text secondary-font">
+                        <p>Everything seems to be up running correctly! I spent the last day or so figuring out how to get a personal website running from R studio
+Proof that I actually got it running library(ape) set.seed(10) par(mfrow=c(2,2)) plot(rlineage(0.1, 0)) # Yule process with lambda = 0.1 title(&#34;Yule process …</p>
+                    </div>
+                </div>
+                <div class="mt-auto card-footer">
+                    <span class="float-start">September 11, 2022</span>
+                    <a href="/blogs/2022-11-09-rmarkdown-blogdown-hugo-github-netlify/" class="float-end btn btn-outline-info btn-sm">Read</a>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+</div><div class="text-center pt-2">
+    
+    <span class="px-1">
+        <a href="https://github.com/magnusnosnes" aria-label="github">
+            <svg xmlns="http://www.w3.org/2000/svg" width="2.7em" height="2.7em" viewBox="0 0 1792 1792">
+                <path
+                    d="M522 1352q-8 9-20-3-13-11-4-19 8-9 20 3 12 11 4 19zm-42-61q9 12 0 19-8 6-17-7t0-18q9-7 17 6zm-61-60q-5 7-13 2-10-5-7-12 3-5 13-2 10 5 7 12zm31 34q-6 7-16-3-9-11-2-16 6-6 16 3 9 11 2 16zm129 112q-4 12-19 6-17-4-13-15t19-7q16 5 13 16zm63 5q0 11-16 11-17 2-17-11 0-11 16-11 17-2 17 11zm58-10q2 10-14 14t-18-8 14-15q16-2 18 9zm964-956v960q0 119-84.5 203.5t-203.5 84.5h-224q-16 0-24.5-1t-19.5-5-16-14.5-5-27.5v-239q0-97-52-142 57-6 102.5-18t94-39 81-66.5 53-105 20.5-150.5q0-121-79-206 37-91-8-204-28-9-81 11t-92 44l-38 24q-93-26-192-26t-192 26q-16-11-42.5-27t-83.5-38.5-86-13.5q-44 113-7 204-79 85-79 206 0 85 20.5 150t52.5 105 80.5 67 94 39 102.5 18q-40 36-49 103-21 10-45 15t-57 5-65.5-21.5-55.5-62.5q-19-32-48.5-52t-49.5-24l-20-3q-21 0-29 4.5t-5 11.5 9 14 13 12l7 5q22 10 43.5 38t31.5 51l10 23q13 38 44 61.5t67 30 69.5 7 55.5-3.5l23-4q0 38 .5 103t.5 68q0 22-11 33.5t-22 13-33 1.5h-224q-119 0-203.5-84.5t-84.5-203.5v-960q0-119 84.5-203.5t203.5-84.5h960q119 0 203.5 84.5t84.5 203.5z" />
+
+                <metadata>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                        xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+                        <rdf:Description about="https://iconscout.com/legal#licenses"
+                            dc:title="Github, Online, Project, Hosting, Square"
+                            dc:description="Github, Online, Project, Hosting, Square" dc:publisher="Iconscout"
+                            dc:date="2016-12-14" dc:format="image/svg+xml" dc:language="en">
+                            <dc:creator>
+                                <rdf:Bag>
+                                    <rdf:li>Font Awesome</rdf:li>
+                                </rdf:Bag>
+                            </dc:creator>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </metadata>
+            </svg>
+        </a>
+    </span>
+    
+
+    
+    <span class="px-1">
+        <a href="https://www.linkedin.com/in/magnus-nyg%C3%A5rd-osnes-22655922b" aria-label="linkedin">
+            <svg xmlns="http://www.w3.org/2000/svg" width='2.4em' height='2.4em' fill="#fff" aria-label="LinkedIn"
+                viewBox="0 0 512 512">
+                <rect width="512" height="512" fill="#0077b5" rx="15%" />
+                <circle cx="142" cy="138" r="37" />
+                <path stroke="#fff" stroke-width="66" d="M244 194v198M142 194v198" />
+                <path d="M276 282c0-20 13-40 36-40 24 0 33 18 33 45v105h66V279c0-61-32-89-76-89-34 0-51 19-59 32" />
+            </svg>
+        </a>
+    </span>
+    
+
+    
+    <a href="https://twitter.com/MagnusOsnes" aria-label="twitter">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
+            <path fill="#03a9f4"
+                d="M42,37c0,2.762-2.239,5-5,5H11c-2.762,0-5-2.238-5-5V11c0-2.762,2.238-5,5-5h26c2.761,0,5,2.238,5,5 V37z" />
+            <path fill="#fff"
+                d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3 c-0.951,0.559-2.671,1.156-3.793,1.372C31.311,15.422,30.033,15,28.617,15C25.897,15,24,17.305,24,20v2c-4,0-7.9-3.047-10.327-6 c-0.427,0.721-0.667,1.565-0.667,2.457c0,1.819,1.671,3.665,2.994,4.543c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057 c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27c0.626,1.935,3.773,2.958,5.928,3c-1.686,1.307-4.692,2-7,2 c-0.399,0-0.615,0.022-1-0.023C14.178,33.357,17.22,34,20,34c9.057,0,14-6.918,14-13.37c0-0.212-0.007-0.922-0.018-1.13 C34.95,18.818,35.342,18.104,36,17.12" />
+        </svg>
+    </a>
+    
+
+    
+
+    
+</div><div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-4 text-center">
+            <div class="pb-2">
+                <a href="https://magnusnosnes.netlify.app/" title="Homepage Magnus Nygård Osnes">
+                    <img alt="Footer logo" src="/rodent.png"
+                        height="40px" width="40px">
+                </a>
+            </div>
+            &copy; 2022  All Rights Reserved
+            <div class="text-secondary">
+                Made with
+                <span class="text-danger">
+                    &#10084;
+                </span>
+                and
+                <a href="https://github.com/gurusabarish/hugo-profile" target="_blank"
+                    title="Designed and developed by gurusabarish">
+                    Hugo Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div></footer><script src="/bootstrap-5/js/bootstrap.bundle.min.js"></script>
+<script>
+    if (document.body.className.includes("dark")) {
+        document.body.classList.remove('dark');
+        localStorage.setItem("pref-theme", 'light');
+    }
+</script>
+
+
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+</script>
+
+<script>
+    let loadingIcons;
+
+    function loading() {
+        myVar = setTimeout(showPage, 100);
+    }
+
+    function showPage() {
+        try{
+            document.getElementById("loading-icons").style.display = "block";
+        } catch(err) {}
+    }
+</script></body>
+
+</html>
